@@ -25,6 +25,9 @@ xcbaselines/
 # CocoaPods
 Pods/
 
+# FastLane
+screenshots/
+
 # www
 node_modules/
 # TODO: remove this when assets is moved into build/

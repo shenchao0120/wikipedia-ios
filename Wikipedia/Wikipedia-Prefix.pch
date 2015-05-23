@@ -29,4 +29,6 @@
 
     #import "MediaWikiKit.h"
 
+    #import "Wikipedia-Swift.h"
+
 #endif // end __OBJC__

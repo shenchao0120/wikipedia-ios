@@ -4,7 +4,7 @@
 #import "AFHTTPRequestOperationManager.h"
 #import <BlocksKit/BlocksKit.h>
 
-@interface SavedArticlesFetcher ()<ArticleFetcherDelegate>
+@interface SavedArticlesFetcher ()
 
 @property (nonatomic, strong, readwrite) MWKSavedPageList* savedPageList;
 @property (nonatomic, strong, readwrite) MWKDataStore* dataStore;
@@ -65,7 +65,43 @@ static SavedArticlesFetcher* _fetcher = nil;
             if (entry.title) {
                 ArticleFetcher* fetcher = [[ArticleFetcher alloc] init];
                 self.fetchersByArticleTitle[entry.title] = fetcher;
-                [fetcher fetchSectionsForTitle:entry.title inDataStore:self.dataStore withManager:manager thenNotifyDelegate:self];
+                [fetcher fetchSectionsForTitle:entry.title inDataStore:self.dataStore withManager:manager progressBlock:NULL completionBlock:^(MWKArticle* article, NSError* error) {
+                    dispatch_async(self.accessQueue, ^{
+                        __block id completedFetcherKey;
+
+                        [self.fetchersByArticleTitle enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL* stop) {
+                            if (fetcher == obj) {
+                                completedFetcherKey = key;
+                                *stop = YES;
+                            }
+                        }];
+
+                        if (completedFetcherKey) {
+                            if (error) {
+                                self.errorsByArticleTitle[completedFetcherKey] = error;
+                            }
+
+                            [self.fetchersByArticleTitle removeObjectForKey:completedFetcherKey];
+
+                            MWKArticle* article = [self.dataStore articleWithTitle:completedFetcherKey];
+
+                            [self.fetchedArticles addObject:article];
+
+                            CGFloat progress = [self progress];
+
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self.fetchFinishedDelegate savedArticlesFetcher:self didFetchArticle:article progress:progress error:error];
+
+                                dispatch_async(self.accessQueue, ^{
+                                    if ([self.fetchersByArticleTitle count] == 0) {
+                                        [self notifyDelegate];
+                                        [[self class] setSharedInstance:nil];
+                                    }
+                                });
+                            });
+                        }
+                    });
+                }];
             }
         }
     });
@@ -87,46 +123,6 @@ static SavedArticlesFetcher* _fetcher = nil;
     }
 
     return (CGFloat)([self.savedPageList length] - [self.fetchersByArticleTitle count]) / (CGFloat)[self.savedPageList length];
-}
-
-- (void)fetchFinished:(id)sender fetchedData:(id)fetchedData status:(FetchFinalStatus)status error:(NSError*)error {
-    ArticleFetcher* fetcher = sender;
-
-    dispatch_async(self.accessQueue, ^{
-        __block id completedFetcherKey;
-
-        [self.fetchersByArticleTitle enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL* stop) {
-            if (fetcher == obj) {
-                completedFetcherKey = key;
-                *stop = YES;
-            }
-        }];
-
-        if (completedFetcherKey) {
-            if (error) {
-                self.errorsByArticleTitle[completedFetcherKey] = error;
-            }
-
-            [self.fetchersByArticleTitle removeObjectForKey:completedFetcherKey];
-
-            MWKArticle* article = [self.dataStore articleWithTitle:completedFetcherKey];
-
-            [self.fetchedArticles addObject:article];
-
-            CGFloat progress = [self progress];
-
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self.fetchFinishedDelegate savedArticlesFetcher:self didFetchArticle:article progress:progress status:status error:error];
-
-                dispatch_async(self.accessQueue, ^{
-                    if ([self.fetchersByArticleTitle count] == 0) {
-                        [self notifyDelegate];
-                        [[self class] setSharedInstance:nil];
-                    }
-                });
-            });
-        }
-    });
 }
 
 - (void)notifyDelegate {

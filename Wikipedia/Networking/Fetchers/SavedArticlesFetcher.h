@@ -11,7 +11,6 @@ typedef void (^ WMFSavedArticlesFetcherProgress)(CGFloat progress);
 - (void)savedArticlesFetcher:(SavedArticlesFetcher*)savedArticlesFetcher
              didFetchArticle:(MWKArticle*)article
                     progress:(CGFloat)progress
-                      status:(FetchFinalStatus)status
                        error:(NSError*)error;
 
 @end

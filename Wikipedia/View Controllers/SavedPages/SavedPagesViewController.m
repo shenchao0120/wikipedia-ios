@@ -446,7 +446,7 @@ static NSString* const kSavedPagesCellID                    = @"SavedPagesResult
 
 #pragma mark - SavedArticlesFetcherDelegate
 
-- (void)savedArticlesFetcher:(SavedArticlesFetcher*)savedArticlesFetcher didFetchArticle:(MWKArticle*)article progress:(CGFloat)progress status:(FetchFinalStatus)status error:(NSError*)error {
+- (void)savedArticlesFetcher:(SavedArticlesFetcher*)savedArticlesFetcher didFetchArticle:(MWKArticle*)article progress:(CGFloat)progress error:(NSError*)error {
     [self.progressView setProgress:progress animated:YES];
 }
 

@@ -191,13 +191,15 @@ public class WMFImageController : NSObject {
     // MARK: - Cancellation
 
     /// Cancel a pending fetch for an image at `url`.
-    public func cancelFetchForURL(url: NSURL) {
-        weak var wself = self;
-        dispatch_async(self.cancellingQueue) {
-            let sself = wself
-            if let cancellable = sself?.cancellables.objectForKey(url.absoluteString!) as? WrapperObject<Cancellable> {
-                sself?.cancellables.removeObjectForKey(url.absoluteString!)
-                cancellable.value.cancel()
+    public func cancelFetchForURL(url: NSURL?) {
+        if let url = url {
+            weak var wself = self;
+            dispatch_async(self.cancellingQueue) {
+                let sself = wself
+                if let cancellable = sself?.cancellables.objectForKey(url.absoluteString!) as? WrapperObject<Cancellable> {
+                    sself?.cancellables.removeObjectForKey(url.absoluteString!)
+                    cancellable.value.cancel()
+                }
             }
         }
     }

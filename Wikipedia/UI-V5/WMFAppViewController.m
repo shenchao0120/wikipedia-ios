@@ -55,6 +55,7 @@
     self.searchViewController.dataStore     = self.session.dataStore;
     self.searchViewController.userDataStore = self.session.userDataStore;
 
+    self.listViewController.dataStore  = self.session.dataStore;
     self.listViewController.savedPages = self.session.userDataStore.savedPageList;
     self.listViewController.dataSource = [[WMFSavedPagesDataSource alloc] initWithSavedPagesList:[self userDataStore].savedPageList];
 

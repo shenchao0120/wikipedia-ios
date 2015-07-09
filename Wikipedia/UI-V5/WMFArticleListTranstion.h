@@ -1,6 +1,8 @@
 
 @import UIKit;
 
+typedef UIView* (^WMFArticleTransitionView)(void);
+
 @interface WMFArticleListTranstion : UIPercentDrivenInteractiveTransition <UIViewControllerTransitioningDelegate, UIViewControllerAnimatedTransitioning, UIViewControllerInteractiveTransitioning>
 
 - (instancetype)initWithPresentingViewController:(UIViewController*)presentingViewController presentedViewController:(UIViewController*)presentedViewController contentScrollView:(UIScrollView*)scrollView;
@@ -21,10 +23,11 @@
 @property (assign, nonatomic) CGFloat offsetOfNextOverlappingCard;
 
 /**
- *  The view to be transistioned into the presented view.
+ *  A block to eturn the view to be transitioned.
  *  This view will be snapshotted.
  */
-@property (strong, nonatomic) UIView* movingCardView;
+@property (strong, nonatomic) WMFArticleTransitionView transitioningViewBlock;
+
 
 /**
  *  The y offset of the final postiion of the presented card in the presented view frame.

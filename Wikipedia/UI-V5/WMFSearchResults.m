@@ -35,6 +35,22 @@ NS_ASSUME_NONNULL_BEGIN
     return self.articles[indexPath.row];
 }
 
+- (NSIndexPath*)indexPathForArticle:(MWKArticle * __nonnull)article{
+    NSUInteger index = [self.articles indexOfObjectPassingTest:^BOOL(MWKArticle *obj, NSUInteger idx, BOOL *stop) {
+        if ([article.title isEqualToTitle:obj.title]) {
+            return YES;
+            *stop = YES;
+        }
+        return NO;
+    }];
+    
+    if(index == NSNotFound){
+        return nil;
+    }
+    
+    return [NSIndexPath indexPathForItem:index inSection:0];
+}
+
 - (BOOL)canDeleteItemAtIndexpath:(NSIndexPath*)indexPath {
     return NO;
 }

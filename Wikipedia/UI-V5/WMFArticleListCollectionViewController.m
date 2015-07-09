@@ -238,16 +238,23 @@ NSArray* indexPathsWithIndexSet(NSIndexSet* indexes, NSInteger section) {
 }
 
 - (void)collectionView:(UICollectionView*)collectionView didSelectItemAtIndexPath:(NSIndexPath*)indexPath {
-    WMFArticleViewControllerContainerCell* cell = (WMFArticleViewControllerContainerCell*)[collectionView cellForItemAtIndexPath:indexPath];
-
+    MWKArticle* article = [self.dataSource articleForIndexPath:indexPath];
+    
     WMFArticleViewController* vc = [WMFArticleViewController articleViewControllerWithDataStore:self.dataStore savedPages:self.savedPages];
-    vc.article = cell.viewController.article;
+    vc.article = article;
 
     self.cardTransition                             = [[WMFArticleListTranstion alloc] initWithPresentingViewController:self presentedViewController:vc contentScrollView:vc.tableView];
     self.cardTransition.nonInteractiveDuration      = 0.5;
     self.cardTransition.presentCardOffset           = vc.tableView.contentInset.top;
     self.cardTransition.offsetOfNextOverlappingCard = self.stackedLayout.topReveal;
-    self.cardTransition.movingCardView              = cell;
+    
+    @weakify(self);
+    self.cardTransition.transitioningViewBlock = ^UIView*(void){
+        @strongify(self);
+        NSIndexPath* indexPath = [self.dataSource indexPathForArticle:article];
+        return [self.collectionView cellForItemAtIndexPath:indexPath];
+    };
+    
     vc.transitioningDelegate                        = self.cardTransition;
     vc.modalPresentationStyle                       = UIModalPresentationCustom;
 

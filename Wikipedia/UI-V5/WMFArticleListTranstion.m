@@ -9,9 +9,6 @@
 @property (nonatomic, weak, readwrite) UIViewController* presentedViewController;
 @property (nonatomic, weak, readwrite) UIScrollView* scrollView;
 
-@property (strong, nonatomic) UIView* movingCardSnapshot;
-@property (strong, nonatomic) UIView* overlappingCardSnapshot;
-
 @property (nonatomic, assign, readwrite) BOOL isPresented;
 @property (nonatomic, assign, readwrite) BOOL isDismissing;
 @property (nonatomic, assign, readwrite) BOOL isPresenting;
@@ -97,64 +94,68 @@
 - (void)animatePresentation:(id<UIViewControllerContextTransitioning>)transitionContext {
     UIView* containerView = [transitionContext containerView];
 
-    UIViewController* fromVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
-    UIViewController* toVC   = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
+    UIViewController* presentingVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
+    UIViewController* presentedVC   = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
 
-    UIView* fromView = fromVC.view;
-    UIView* toView   = toVC.view;
+    UIView* presentingView = presentingVC.view;
+    UIView* presentedView   = presentedVC.view;
 
-    //Setup toView
-    CGRect toViewFinalFrame = [transitionContext finalFrameForViewController:toVC];
-    toView.frame = toViewFinalFrame;
-    toView.alpha = 0.0;
+    //Setup presentedView
+    CGRect presentedViewFrame = [transitionContext finalFrameForViewController:presentedVC];
+    presentedView.frame = presentedViewFrame;
+    presentedView.alpha = 0.0;
+
+    UIView* dismissedView = self.transitioningViewBlock();
 
     //Setup snapshot of presented card
-    UIView* snapshotView = [self.movingCardView snapshotViewAfterScreenUpdates:YES];
-    self.movingCardSnapshot = snapshotView;
-
-    //Setup final frame for presented card
-    CGRect referenceFrameAdjustedForContainerView = [containerView convertRect:self.movingCardView.frame fromView:self.movingCardView.superview];
-    snapshotView.frame = referenceFrameAdjustedForContainerView;
-    CGRect finalSnapshotFrame = snapshotView.frame;
-    finalSnapshotFrame.origin.y = toViewFinalFrame.origin.y + self.presentCardOffset;
+    UIView* snapshotView = [dismissedView snapshotViewAfterScreenUpdates:YES];
+    CGRect dismissedSnapshotFrame = [containerView convertRect:dismissedView.frame fromView:dismissedView.superview];
+    CGRect presentedSnapshotFrame = dismissedSnapshotFrame;
+    presentedSnapshotFrame.origin.y = presentedViewFrame.origin.y + self.presentCardOffset;
 
     //How far the animation moves (used to compute percentage for the interactive portion)
-    self.totalCardAnimationDistance = referenceFrameAdjustedForContainerView.origin.y - toViewFinalFrame.origin.y;
+    self.totalCardAnimationDistance = dismissedSnapshotFrame.origin.y - presentedViewFrame.origin.y;
 
     //Setup snapshot of overlapping cards
-    CGRect referenceFrameAdjustedForFromView = [fromView convertRect:self.movingCardView.frame fromView:self.movingCardView.superview];
-    CGRect overlappingCardsSnapshotFrame     = CGRectMake(0, referenceFrameAdjustedForFromView.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(fromView.bounds), CGRectGetHeight(fromView.bounds));
-    UIView* overlappingCards                 = [fromView resizableSnapshotViewFromRect:overlappingCardsSnapshotFrame afterScreenUpdates:YES withCapInsets:UIEdgeInsetsZero];
-    overlappingCards.frame       = CGRectMake(0, referenceFrameAdjustedForContainerView.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(fromView.bounds), CGRectGetHeight(fromView.bounds));
-    self.overlappingCardSnapshot = overlappingCards;
+    CGRect dismissedSnapshotFrameAdjustedForPresentingView = [presentingView convertRect:dismissedView.frame fromView:dismissedView.superview];
+    CGRect overlappingCardsSnapshotFrame     = CGRectMake(0, dismissedSnapshotFrameAdjustedForPresentingView.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(presentingView.bounds), CGRectGetHeight(presentingView.bounds));
+    UIView* overlappingCardsSnapshot                 = [presentingView resizableSnapshotViewFromRect:overlappingCardsSnapshotFrame afterScreenUpdates:YES withCapInsets:UIEdgeInsetsZero];
+
+    CGRect dismissedOverlappingCardsFrame  = CGRectMake(0, dismissedSnapshotFrame.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(presentingView.bounds), CGRectGetHeight(presentingView.bounds));
+    CGRect middleOverlappingCardsFrame = CGRectOffset(overlappingCardsSnapshot.frame, 0, -30);
+    CGRect presentedOverlappingCardsFrame = CGRectOffset(overlappingCardsSnapshot.frame, 0, CGRectGetHeight(containerView.frame) - overlappingCardsSnapshot.frame.origin.y);
+    
+
+    snapshotView.frame = dismissedSnapshotFrame;
+    overlappingCardsSnapshot.frame  = dismissedOverlappingCardsFrame;
 
     //Add views to the container
-    [containerView addSubview:toView];
+    [containerView addSubview:presentedView];
     [containerView addSubview:snapshotView];
-    [containerView addSubview:overlappingCards];
+    [containerView addSubview:overlappingCardsSnapshot];
 
     self.isPresenting = YES;
     [UIView animateKeyframesWithDuration:self.nonInteractiveDuration delay:0.0 options:UIViewKeyframeAnimationOptionCalculationModeCubic animations:^{
         [UIView addKeyframeWithRelativeStartTime:0.0 relativeDuration:1.0 animations:^{
-            snapshotView.frame = finalSnapshotFrame;
+            snapshotView.frame = presentedSnapshotFrame;
         }];
 
         [UIView addKeyframeWithRelativeStartTime:0.0 relativeDuration:0.25 animations:^{
-            overlappingCards.frame = CGRectOffset(overlappingCards.frame, 0, -30);
+            overlappingCardsSnapshot.frame = middleOverlappingCardsFrame;
         }];
 
 
         [UIView addKeyframeWithRelativeStartTime:0.25 relativeDuration:0.75 animations:^{
-            overlappingCards.frame = CGRectOffset(overlappingCards.frame, 0, CGRectGetHeight(containerView.frame) - overlappingCards.frame.origin.y);
+            overlappingCardsSnapshot.frame = presentedOverlappingCardsFrame;
         }];
     } completion:^(BOOL finished) {
-        toView.alpha = 1.0;
+        presentedView.alpha = 1.0;
 
         self.isPresenting = NO;
         self.isPresented = ![transitionContext transitionWasCancelled];
 
         [snapshotView removeFromSuperview];
-        [overlappingCards removeFromSuperview];
+        [overlappingCardsSnapshot removeFromSuperview];
 
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
     }];
@@ -163,47 +164,71 @@
 - (void)animateDismiss:(id<UIViewControllerContextTransitioning>)transitionContext {
     UIView* containerView = [transitionContext containerView];
 
-    UIViewController* fromVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
+    UIViewController* presentingVC = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
+    UIViewController* presentedVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
 
-    UIView* fromView = fromVC.view;
-    fromView.alpha = 0.0;
+    UIView* presentingView = presentingVC.view;
+    UIView* presentedView = presentedVC.view;
+    
+    CGRect presentedViewFrame = [transitionContext initialFrameForViewController:presentedVC];
+    presentedView.alpha = 0.0;
+
+    UIView* dismissedView = self.transitioningViewBlock();
 
     //Setup snapshot of presented card
-    UIView* snapshotView      = self.movingCardSnapshot;
-    CGRect finalSnapshotFrame = [containerView convertRect:self.movingCardView.frame fromView:self.movingCardView.superview];
+    UIView* snapshotView = [presentedView snapshotViewAfterScreenUpdates:YES];
+    CGRect dismissedSnapshotFrame = CGRectZero;
+    if(dismissedView){
+        dismissedSnapshotFrame = [containerView convertRect:dismissedView.frame fromView:dismissedView.superview];
+    }else{
+        dismissedSnapshotFrame = CGRectOffset(containerView.frame, 0, CGRectGetHeight(containerView.frame));
+    }
+    CGRect presentedSnapshotFrame = presentedView.frame;
+    presentedSnapshotFrame.origin.y = presentedViewFrame.origin.y + self.presentCardOffset;
+    
+    //How far the animation moves (used to compute percentage for the interactive portion)
+    self.totalCardAnimationDistance = dismissedSnapshotFrame.origin.y - presentedViewFrame.origin.y;
 
     //Setup snapshot of overlapping cards
-    UIView* overlappingCards         = self.overlappingCardSnapshot;
-    CGRect finalOverlapSnapshotFrame = CGRectMake(0, finalSnapshotFrame.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(fromView.bounds), CGRectGetHeight(fromView.bounds));
+    CGRect dismissedSnapshotFrameAdjustedForPresentingView = [presentingView convertRect:dismissedView.frame fromView:dismissedView.superview];
+    CGRect overlappingCardsSnapshotFrame     = CGRectMake(0, dismissedSnapshotFrameAdjustedForPresentingView.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(presentingView.bounds), CGRectGetHeight(presentingView.bounds));
+    UIView* overlappingCardsSnapshot                 = [presentingView resizableSnapshotViewFromRect:overlappingCardsSnapshotFrame afterScreenUpdates:YES withCapInsets:UIEdgeInsetsZero];
+    
+    CGRect dismissedOverlappingCardsFrame  = CGRectMake(0, dismissedSnapshotFrame.origin.y + self.offsetOfNextOverlappingCard, CGRectGetWidth(presentingView.bounds), CGRectGetHeight(presentingView.bounds));
+    CGRect middleOverlappingCardsFrame = CGRectOffset(overlappingCardsSnapshot.frame, 0, -30);
+    CGRect presentedOverlappingCardsFrame = CGRectOffset(overlappingCardsSnapshot.frame, 0, CGRectGetHeight(containerView.frame) - overlappingCardsSnapshot.frame.origin.y);
+
+    snapshotView.frame = presentedSnapshotFrame;
+    overlappingCardsSnapshot.frame  = presentedOverlappingCardsFrame;
 
     //Add views to the container
     [containerView addSubview:snapshotView];
-    [containerView addSubview:overlappingCards];
+    [containerView addSubview:overlappingCardsSnapshot];
 
     self.isDismissing = YES;
     [UIView animateKeyframesWithDuration:self.nonInteractiveDuration delay:0.0 options:UIViewKeyframeAnimationOptionCalculationModeCubic animations:^{
         [UIView addKeyframeWithRelativeStartTime:0.0 relativeDuration:1.0 animations:^{
-            snapshotView.frame = finalSnapshotFrame;
+            snapshotView.frame = dismissedSnapshotFrame;
         }];
 
         [UIView addKeyframeWithRelativeStartTime:0.0 relativeDuration:0.75 animations:^{
-            overlappingCards.frame = CGRectOffset(finalOverlapSnapshotFrame, 0, -30);
+            overlappingCardsSnapshot.frame = middleOverlappingCardsFrame;
         }];
 
 
         [UIView addKeyframeWithRelativeStartTime:0.75 relativeDuration:0.25 animations:^{
-            overlappingCards.frame = finalOverlapSnapshotFrame;
+            overlappingCardsSnapshot.frame = dismissedOverlappingCardsFrame;
         }];
     } completion:^(BOOL finished) {
         if ([transitionContext transitionWasCancelled]) {
-            fromView.alpha = 1.0;
+            presentedView.alpha = 1.0;
         }
 
         self.isDismissing = NO;
         self.isPresented = [transitionContext transitionWasCancelled];
 
         [snapshotView removeFromSuperview];
-        [overlappingCards removeFromSuperview];
+        [overlappingCardsSnapshot removeFromSuperview];
 
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
     }];

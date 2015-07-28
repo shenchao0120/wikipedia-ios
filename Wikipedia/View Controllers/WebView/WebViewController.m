@@ -2051,4 +2051,28 @@ typedef NS_ENUM (NSInteger, WMFWebViewAlertType) {
     [dialog show];
 }
 
+typedef NS_ENUM (NSInteger, WMFTextSize) {
+    WMFTextSizeSmall  = 80,
+    WMFTextSizeNormal = 100,
+    WMFTextSizeLarge  = 120
+};
+
+- (void)didReceiveMemoryWarning {
+    static WMFTextSize size = WMFTextSizeNormal;
+
+    switch (size) {
+        case WMFTextSizeNormal:
+            size = WMFTextSizeLarge;
+            break;
+        case WMFTextSizeLarge:
+            size = WMFTextSizeSmall;
+            break;
+        case WMFTextSizeSmall:
+            size = WMFTextSizeNormal;
+            break;
+    }
+
+    [self.webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.querySelector('body').style['-webkit-text-size-adjust'] = '%ld%%';", size]];
+}
+
 @end

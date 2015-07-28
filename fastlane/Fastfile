@@ -19,6 +19,16 @@ platform :ios do
   lane :analyze do
     return if test_disabled?
     make 'lint'
+    compilation_db_path = 'build/reports/compilation-database.json'
+    xctool :build, [
+      'CLANG_STATIC_ANALYZER_MODE=deep',
+      'RUN_CLANG_STATIC_ANALYZER=YES',
+      '-reporter pretty',
+      "-reporter json-compliation-database:#{compilation_db_path}"
+    ]
+    oclint(
+      compile_commmands: compilation_db_path
+    )
   end
 
   desc "Lints code, runs tests, and generates reports"

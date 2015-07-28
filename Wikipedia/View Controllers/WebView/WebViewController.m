@@ -2072,7 +2072,13 @@ typedef NS_ENUM (NSInteger, WMFTextSize) {
             break;
     }
 
+// Hack to keep pre-resize scroll position! (would need to refactor the position recording code to be more easily re-usable by both rotation code and resizing code)
+    [self willRotateToInterfaceOrientation:self.interfaceOrientation duration:0];
+
     [self.webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.querySelector('body').style['-webkit-text-size-adjust'] = '%ld%%';", size]];
+
+// Hack to keep pre-resize scroll position!
+    [self didRotateFromInterfaceOrientation:self.interfaceOrientation];
 }
 
 @end

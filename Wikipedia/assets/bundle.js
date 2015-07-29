@@ -101,7 +101,7 @@ exports.getIndexOfFirstOnScreenElementWithTopGreaterThanY = function(elementPref
 },{}],3:[function(require,module,exports){
 (function () {
 var bridge = require("./bridge");
-var transformer = require("./transformer");
+//var transformer = require("./transformer");
 var refs = require("./refs");
 var issuesAndDisambig = require("./transforms/collapsePageIssuesAndDisambig");
 
@@ -109,13 +109,13 @@ var issuesAndDisambig = require("./transforms/collapsePageIssuesAndDisambig");
 // See: http://stackoverflow.com/a/3698214/135557
 document.addEventListener("DOMContentLoaded", function() {
 
-    transformer.transform( "moveFirstGoodParagraphUp", document );
-    transformer.transform( "hideRedlinks", document );
-    transformer.transform( "disableFilePageEdit", document );
-    transformer.transform( "addImageOverflowXContainers", document ); // Needs to happen before "widenImages" transform.
-    transformer.transform( "widenImages", document );
-    transformer.transform( "hideTables", document );
-    transformer.transform( "collapsePageIssuesAndDisambig", document.getElementById( "section_heading_and_content_block_0" ) );
+//    transformer.transform( "moveFirstGoodParagraphUp", document );
+//    transformer.transform( "hideRedlinks", document );
+//    transformer.transform( "disableFilePageEdit", document );
+//    transformer.transform( "addImageOverflowXContainers", document ); // Needs to happen before "widenImages" transform.
+//    transformer.transform( "widenImages", document );
+//    transformer.transform( "hideTables", document );
+//    transformer.transform( "collapsePageIssuesAndDisambig", document.getElementById( "section_heading_and_content_block_0" ) );
 
     bridge.sendMessage( "DOMContentLoaded", {} );
 });
@@ -294,7 +294,7 @@ document.addEventListener("touchend", handleTouchEnded, false);
 
 })();
 
-},{"./bridge":1,"./refs":5,"./transformer":6,"./transforms/collapsePageIssuesAndDisambig":9}],4:[function(require,module,exports){
+},{"./bridge":1,"./refs":5,"./transforms/collapsePageIssuesAndDisambig":9}],4:[function(require,module,exports){
 
 var bridge = require("./bridge");
 var elementLocation = require("./elementLocation");

@@ -27,6 +27,9 @@
 #import "WMFArticleViewController.h"
 #import "PageHistoryViewController.h"
 
+#import "UIView+WMFSearchSubviews.h"
+#import "MWKSection+TOC.h"
+
 typedef NS_ENUM (NSInteger, WMFWebViewAlertType) {
     WMFWebViewAlertZeroWebPage,
     WMFWebViewAlertZeroCharged,
@@ -185,6 +188,9 @@ typedef NS_ENUM (NSInteger, WMFWebViewAlertType) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [weakSelf.tocVC updateTocForArticle:[SessionSingleton sharedInstance].currentArticle];
             [weakSelf updateTOCScrollPositionWithoutAnimationIfHidden];
+
+
+            [weakSelf performSelector:@selector(labelTest) withObject:nil afterDelay:1.0];
         });
     }];
 
@@ -257,6 +263,82 @@ typedef NS_ENUM (NSInteger, WMFWebViewAlertType) {
     self.webView.scrollView.layer.anchorPoint = CGPointMake((isRTL ? 1.0 : 0.0), 0.0);
 
     [self tocUpdateViewLayout];
+}
+
+- (void)labelTest {
+/*
+
+   blockers?
+
+   -need to reflow on *every* html reflow, including but not limited to
+     -all tranforms affecting any layout sizes/positioning
+     -tables open/close
+     -late image arrival
+     -rotation
+     -text size change
+
+   -fragile reliance on "UIWebBrowserView" introspection hack
+
+   instead of spending all the effort to cover these edges, instead do this:
+    -go full native w text & links and images (no js transforms needed!)
+    -tables are collapsed anyway so just replace them w native buttons
+        which when tapped load the table in web view in table cell
+        (expands when toggled open, contracts when togged closed)
+
+ */
+    UIView* browserView = [self.webView.scrollView wmf_firstSubviewOfClass:NSClassFromString(@"UIWebBrowserView")];
+
+    for (MWKSection* section in self.session.currentArticle.sections) {
+        NSString* title = section.line;
+        if (title) {
+            //NSLog(@"\n\ndisplay title = %@", title);
+            //NSLog(@"\tline = %@", section.line);
+            //CGRect r = [self.webView getScreenRectForHtmlElementWithId:section.anchor];
+            //NSLog(@"\tr = %@", NSStringFromCGRect(r));
+            CGRect r2 = [self.webView getWebViewRectForHtmlElementWithId:section.anchor];
+            //NSLog(@"\tr2 = %@", NSStringFromCGRect(r2));
+
+            PaddedLabel* testLabel = [[PaddedLabel alloc] init];
+            testLabel.alpha                                     = 0.5;
+            testLabel.layer.borderWidth                         = 1.0f;
+            testLabel.font                                      = [UIFont fontWithName:@"Times New Roman" size:25.0];
+            testLabel.padding                                   = UIEdgeInsetsMake(14, 18, 14, 18);
+            testLabel.translatesAutoresizingMaskIntoConstraints = NO;
+            testLabel.numberOfLines                             = 0;
+            testLabel.lineBreakMode                             = NSLineBreakByWordWrapping;
+            testLabel.text                                      = [section.line wmf_stringByRemovingHTML];
+
+            testLabel.textColor             = [UIColor redColor];
+            testLabel.layer.backgroundColor = [UIColor lightGrayColor].CGColor;
+            [self.webView.scrollView addSubview:testLabel];
+
+            void (^ constrainEqually)(NSLayoutAttribute, CGFloat) = ^(NSLayoutAttribute attr, CGFloat constant) {
+                [self.webView.scrollView addConstraint:
+                 [NSLayoutConstraint constraintWithItem:testLabel
+                                              attribute:attr
+                                              relatedBy:NSLayoutRelationEqual
+                                                 toItem:browserView
+                                              attribute:attr
+                                             multiplier:1.0
+                                               constant:constant]
+                ];
+            };
+
+            constrainEqually(NSLayoutAttributeTrailing, 0);
+            constrainEqually(NSLayoutAttributeLeading, 0);
+            constrainEqually(NSLayoutAttributeTop, r2.origin.y);
+
+            //        NSDictionary* sectionDict =
+            //            @{
+            //            @"id": @(section.sectionId),
+            //            @"isLead": @([section isLeadSection]),
+            //            @"level": section.toclevel ? section.toclevel : @0,
+            //            @"title": title
+            //        };
+            //
+            //        [allSectionData addObject:sectionDict];
+        }
+    }
 }
 
 - (void)jumpToFragmentIfNecessary {
@@ -1455,11 +1537,13 @@ typedef NS_ENUM (NSInteger, WMFWebViewAlertType) {
         self.lastScrollOffset = scrollOffset;
     }
 
+/*
     if (!self.session.currentArticle.isMain) {
         // Add target div for TOC "read more" entry so it can use existing
         // TOC scrolling mechanism.
         [sectionTextArray addObject:@"<div id='section_heading_and_content_block_100000'></div>"];
     }
+ */
 
     // Join article sections text
     NSString* joint   = @"";     //@"<div style=\"height:20px;\"></div>";

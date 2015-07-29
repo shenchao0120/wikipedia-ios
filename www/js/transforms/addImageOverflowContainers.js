@@ -30,7 +30,7 @@ function maybeAddImageOverflowXContainer() {
 transformer.register( "addImageOverflowXContainers", function( content ) {
     // Wrap wide images in a <div style="overflow-x:auto">...</div> so they can scroll
     // side to side if needed without causing the entire section to scroll side to side.
-    var images = content.getElementsByTagName('img');
+    var images = content.querySelectorAll('img');
     for (var i = 0; i < images.length; ++i) {
         // Load event used so images w/o style or inline width/height
         // attributes can still have their size determined reliably.

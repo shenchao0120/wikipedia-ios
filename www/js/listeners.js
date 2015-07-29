@@ -8,13 +8,52 @@ var issuesAndDisambig = require("./transforms/collapsePageIssuesAndDisambig");
 // See: http://stackoverflow.com/a/3698214/135557
 document.addEventListener("DOMContentLoaded", function() {
 
-    transformer.transform( "moveFirstGoodParagraphUp", document );
-    transformer.transform( "hideRedlinks", document );
-    transformer.transform( "disableFilePageEdit", document );
-    transformer.transform( "addImageOverflowXContainers", document ); // Needs to happen before "widenImages" transform.
-    transformer.transform( "widenImages", document );
-    transformer.transform( "hideTables", document );
-    transformer.transform( "collapsePageIssuesAndDisambig", document.getElementById( "section_heading_and_content_block_0" ) );
+    // Identify 1st good paragraph before detaching
+    // (p tags don't have offsetHeight used to determine "goodness" after detach)
+    transformer.transform( "markFirstGoodParagraph", document );
+
+    // Now detach so we can do dom transforms without layout thrashing
+    var content = document.getElementById("content");
+    var parent = content.parentNode;
+    var detachedContent = parent.removeChild(content);
+    
+    transformer.transform( "moveFirstGoodParagraphUp", detachedContent );
+    transformer.transform( "hideRedlinks", detachedContent );
+    transformer.transform( "disableFilePageEdit", detachedContent );
+    transformer.transform( "addImageOverflowXContainers", detachedContent ); // Needs to happen before "widenImages" transform.
+
+
+
+
+
+
+
+
+/*
+
+Needed to finish making the remainder of transforms able to operate on detachedContent:
+
+    - pass them detachedContent not body
+    - make them internally use querySelector and querySelectorAll instead of getElementById and getElementByTagName
+    - widenImages would need to change to set the img tag width and height attributes *before* the image load event fires
+        (would need to determine width to be requested and extrapolate height from the
+        data-file-width/data-file-height ratio)
+
+*/
+
+//    transformer.transform( "widenImages", body );
+//    transformer.transform( "hideTables", body );
+//    transformer.transform( "collapsePageIssuesAndDisambig", document.getElementById( "section_heading_and_content_block_0" ) );
+
+
+
+
+
+
+
+
+    // Now reattach the dom so we can see our transforms.
+    parent.appendChild(detachedContent);
 
     bridge.sendMessage( "DOMContentLoaded", {} );
 });

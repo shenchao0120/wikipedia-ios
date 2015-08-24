@@ -59,12 +59,14 @@
                                     <size key="shadowOffset" width="0.0" height="1"/>
                                 </label>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="7Lr-kU-lXN" userLabel="Save Button">
-                                    <rect key="frame" x="560" y="10" width="30" height="30"/>
+                                    <rect key="frame" x="565" y="10" width="25" height="25"/>
                                     <animations/>
                                     <constraints>
-                                        <constraint firstAttribute="height" constant="30" id="UCw-sr-3ES"/>
-                                        <constraint firstAttribute="width" constant="30" id="xxa-A3-dMe"/>
+                                        <constraint firstAttribute="height" constant="25" id="UCw-sr-3ES"/>
+                                        <constraint firstAttribute="width" constant="25" id="xxa-A3-dMe"/>
                                     </constraints>
+                                    <state key="normal" image="unsaved"/>
+                                    <state key="selected" image="saved"/>
                                     <connections>
                                         <action selector="toggleSave:" destination="Btv-Tg-s8D" eventType="touchUpInside" id="53C-N0-a7G"/>
                                     </connections>
@@ -327,5 +329,7 @@
     <resources>
         <image name="lead-default" width="640" height="512"/>
         <image name="logo-placeholder-search" width="55" height="55"/>
+        <image name="saved" width="25" height="25"/>
+        <image name="unsaved" width="25" height="25"/>
     </resources>
 </document>

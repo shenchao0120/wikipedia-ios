@@ -18,9 +18,8 @@
 - (void)awakeFromNib {
     [super awakeFromNib];
     self.initialDescriptionTopConstraintConstant = self.descriptionTopConstraint.constant;
-    [self.saveButton wmf_setButtonType:WMFButtonTypeHeart];
-    self.titleLabel.layer.shadowRadius       = 5.0;
-    self.descriptionLabel.layer.shadowRadius = 5.0;
+    self.titleLabel.layer.shadowRadius           = 5.0;
+    self.descriptionLabel.layer.shadowRadius     = 5.0;
 }
 
 - (void)setTitle:(NSString*)title description:(NSString*)description {

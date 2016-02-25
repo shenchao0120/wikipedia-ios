@@ -165,19 +165,19 @@ static NSString* const WMFExploreSectionsFileExtension = @"plist";
     return _sections;
 }
 
-- (void)setSections:(NSArray<WMFExploreSection*>*)sections {
-    if (_sections == sections) {
+- (void)updateSections:(NSArray<WMFExploreSection*>*)sections {
+    if (self.sections == sections) {
         // not bothering with equality check here since it could be expensive when list is long
         return;
     }
 
     if (sections) {
-        _sections = [sections sortedArrayWithOptions:NSSortStable usingComparator:^NSComparisonResult (WMFExploreSection* _Nonnull obj1, WMFExploreSection* _Nonnull obj2) {
+        self.sections = [sections sortedArrayWithOptions:NSSortStable usingComparator:^NSComparisonResult (WMFExploreSection* _Nonnull obj1, WMFExploreSection* _Nonnull obj2) {
             return [obj1 compare:obj2];
         }];
     } else {
         // must be nonnull
-        _sections = @[];
+        self.sections = @[];
     }
 
     [self.delegate sectionSchemaDidUpdateSections:self];
@@ -238,7 +238,7 @@ static NSString* const WMFExploreSectionsFileExtension = @"plist";
 
     self.lastUpdatedAt = [NSDate date];
 
-    [self setSections:sections];
+    [self updateSections:sections];
 
     return YES;
 }
@@ -257,7 +257,7 @@ static NSString* const WMFExploreSectionsFileExtension = @"plist";
     if (new) {
         [sections insertObject:new atIndex:0];
     }
-    [self setSections:sections];
+    [self updateSections:sections];
     return YES;
 }
 
@@ -288,9 +288,10 @@ static NSString* const WMFExploreSectionsFileExtension = @"plist";
         [sections bk_performReject:^BOOL (WMFExploreSection* obj) {
             return obj.type == WMFExploreSectionTypeNearby;
         }];
+
         [sections wmf_safeAddObject:[self nearbySectionWithLocation:location placemark:placemark]];
 
-        [self setSections:sections];
+        [self updateSections:sections];
     });
 }
 
@@ -299,7 +300,7 @@ static NSString* const WMFExploreSectionsFileExtension = @"plist";
     [sections bk_performReject:^BOOL (WMFExploreSection* obj) {
         return obj.type == WMFExploreSectionTypeNearby;
     }];
-    [self setSections:sections];
+    [self updateSections:sections];
 }
 
 - (void)updateWithChangesInBlackList:(WMFRelatedSectionBlackList*)blackList {
@@ -572,7 +573,7 @@ static NSString* const WMFExploreSectionsFileExtension = @"plist";
 
 - (void)nearbyController:(WMFLocationManager*)controller didChangeEnabledState:(BOOL)enabled {
     if (!enabled) {
-        [self setSections:
+        [self updateSections:
          [self.sections filteredArrayUsingPredicate:
           [NSPredicate predicateWithBlock:^BOOL (WMFExploreSection* _Nonnull evaluatedObject,
                                                  NSDictionary < NSString*, id > * _Nullable _) {
